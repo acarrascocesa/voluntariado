@@ -29,7 +29,7 @@ st.title("🏟️ Voluntarios Juegos Centroamericanos y del Caribe 2026")
 # Cargar datos (WPForms)
 ###############################################################################
 
-FILE = "wpforms-45824-Formulario-de-Voluntarios-2025-07-24-17-35-23.csv"
+FILE = "wpforms-45824-Formulario-de-Voluntarios-2025-07-24-20-00-43.csv"
 
 @st.cache_data(show_spinner="Cargando datos…")
 def load_data(path: str) -> pd.DataFrame:
