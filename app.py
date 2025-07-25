@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import os
+import unicodedata
 
 # ---------------------------------------------------------------------------
 # Intenta usar Plotly para visualizaciones más ricas. Si no existe, avisa.
@@ -41,8 +42,27 @@ def load_data(path: str) -> pd.DataFrame:
 df = load_data(FILE)
 
 ###############################################################################
-# Helper: localizar columnas clave (case‑insensitive)
+# Normalización de texto para país y nacionalidad
 ###############################################################################
+
+def normalize_text(col: pd.Series) -> pd.Series:
+    # 1) Rellenar NaN y pasar a str
+    s = col.fillna("Sin dato").astype(str)
+    # 2) Quitar espacios al inicio/fin
+    s = s.str.strip()
+    # 3) Pasar todo a minúsculas
+    s = s.str.lower()
+    # 4) Descomponer unicode y eliminar tildes
+    s = s.apply(lambda x: unicodedata.normalize("NFKD", x)) \
+         .str.encode("ascii", errors="ignore") \
+         .str.decode("utf-8")
+    # 5) Capitalizar cada palabra (opcional)
+    s = s.str.title()
+    return s
+
+# ---------------------------------------------------------------------------
+# Helper: localizar columnas clave (case‑insensitive)
+# ---------------------------------------------------------------------------
 
 def find_col(substrings):
     for col in df.columns:
@@ -58,6 +78,22 @@ col_gender    = find_col(["sexo"])
 col_shirt     = find_col(["talla", "camisa"])
 col_avail     = find_col(["disponibilidad", "horario"])
 col_insurance = find_col(["seguro"])
+
+# Aplica normalización a país y nacionalidad
+if col_country:
+    df[col_country] = normalize_text(df[col_country])
+if col_nat:
+    df[col_nat]     = normalize_text(df[col_nat])
+
+# (Opcional) Restaurar tildes en casos puntuales
+mapping = {
+    "Republica Dominicana": "República Dominicana",
+    # añade más correcciones si es necesario
+}
+if col_country:
+    df[col_country] = df[col_country].replace(mapping)
+if col_nat:
+    df[col_nat]     = df[col_nat].replace(mapping)
 
 ###############################################################################
 # KPIs principales
