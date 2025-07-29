@@ -10,6 +10,7 @@ import unicodedata
 # ---------------------------------------------------------------------------
 try:
     import plotly.express as px
+
     PLOTLY = True
 except ModuleNotFoundError:
     PLOTLY = False
@@ -32,18 +33,23 @@ st.title("🏟️ Voluntarios Juegos Centroamericanos y del Caribe 2026")
 
 FILE = "wpforms-45824-Formulario-de-Voluntarios-2025-07-29-13-01-32.csv"
 
+
 @st.cache_data(show_spinner="Cargando datos…")
 def load_data(path: str) -> pd.DataFrame:
     if not os.path.exists(path):
-        st.error(f"No se encontró el archivo {path}. Colócalo en el mismo directorio y reinicia.")
+        st.error(
+            f"No se encontró el archivo {path}. Colócalo en el mismo directorio y reinicia."
+        )
         st.stop()
     return pd.read_csv(path)
+
 
 df = load_data(FILE)
 
 ###############################################################################
 # Normalización de texto para país y nacionalidad
 ###############################################################################
+
 
 def normalize_text(col: pd.Series) -> pd.Series:
     # 1) Rellenar NaN y pasar a str
@@ -53,16 +59,20 @@ def normalize_text(col: pd.Series) -> pd.Series:
     # 3) Pasar todo a minúsculas
     s = s.str.lower()
     # 4) Descomponer unicode y eliminar tildes
-    s = s.apply(lambda x: unicodedata.normalize("NFKD", x)) \
-         .str.encode("ascii", errors="ignore") \
-         .str.decode("utf-8")
+    s = (
+        s.apply(lambda x: unicodedata.normalize("NFKD", x))
+        .str.encode("ascii", errors="ignore")
+        .str.decode("utf-8")
+    )
     # 5) Capitalizar cada palabra (opcional)
     s = s.str.title()
     return s
 
+
 # ---------------------------------------------------------------------------
 # Helper: localizar columnas clave (case‑insensitive)
 # ---------------------------------------------------------------------------
+
 
 def find_col(substrings):
     for col in df.columns:
@@ -71,19 +81,20 @@ def find_col(substrings):
             return col
     return None
 
-col_country   = find_col(["país", "residencia"]) or find_col(["pais", "residencia"])
-col_nat       = find_col(["nacionalidad"])
-col_dob       = find_col(["fecha", "nacimiento"])
-col_gender    = find_col(["sexo"])
-col_shirt     = find_col(["talla", "camisa"])
-col_avail     = find_col(["disponibilidad", "horario"])
+
+col_country = find_col(["país", "residencia"]) or find_col(["pais", "residencia"])
+col_nat = find_col(["nacionalidad"])
+col_dob = find_col(["fecha", "nacimiento"])
+col_gender = find_col(["sexo"])
+col_shirt = find_col(["talla", "camisa"])
+col_avail = find_col(["disponibilidad", "horario"])
 col_insurance = find_col(["seguro"])
 
 # Aplica normalización a país y nacionalidad
 if col_country:
     df[col_country] = normalize_text(df[col_country])
 if col_nat:
-    df[col_nat]     = normalize_text(df[col_nat])
+    df[col_nat] = normalize_text(df[col_nat])
 
 # (Opcional) Restaurar tildes en casos puntuales
 mapping = {
@@ -114,15 +125,15 @@ if col_nat:
 if col_country:
     df[col_country] = df[col_country].replace(mapping)
 if col_nat:
-    df[col_nat]     = df[col_nat].replace(mapping)
+    df[col_nat] = df[col_nat].replace(mapping)
 
 ###############################################################################
 # KPIs principales
 ###############################################################################
 
-total_vol        = len(df)
+total_vol = len(df)
 unique_countries = df[col_country].nunique() if col_country else 0
-unique_national  = df[col_nat].nunique() if col_nat else 0
+unique_national = df[col_nat].nunique() if col_nat else 0
 
 kpi1, kpi2, kpi3 = st.columns(3)
 with kpi1:
@@ -151,7 +162,13 @@ if col_country and PLOTLY:
     )
     st.plotly_chart(fig_map, use_container_width=True)
 
-    top_n = st.slider("Mostrar Top N países", 3, min(30, len(country_counts)), 10, key="slider_country")
+    top_n = st.slider(
+        "Mostrar Top N países",
+        3,
+        min(30, len(country_counts)),
+        10,
+        key="slider_country",
+    )
     st.bar_chart(country_counts.set_index("Country").head(top_n))
 elif col_country:
     st.subheader("País de residencia – Top 10")
@@ -173,16 +190,26 @@ if col_nat:
 if col_dob:
     today = datetime(2025, 7, 21)
     dob = pd.to_datetime(df[col_dob], errors="coerce", dayfirst=True)
-    age = dob.apply(lambda d: today.year - d.year - ((today.month, today.day) < (d.month, d.day)) if pd.notnull(d) else np.nan)
+    age = dob.apply(
+        lambda d: (
+            today.year - d.year - ((today.month, today.day) < (d.month, d.day))
+            if pd.notnull(d)
+            else np.nan
+        )
+    )
     df["Age"] = age
 
-    bins   = [15, 18, 25, 35, 50, 100]
+    bins = [15, 18, 25, 35, 50, 100]
     labels = ["15‑18", "18‑25", "25‑35", "35‑50", "50+"]
     df["AgeGroup"] = pd.cut(df["Age"], bins=bins, labels=labels, right=False)
 
     st.subheader("Sexo por rango de edad")
     if col_gender:
-        gender_age = df.groupby(["AgeGroup", col_gender], observed=True).size().unstack(fill_value=0)
+        gender_age = (
+            df.groupby(["AgeGroup", col_gender], observed=True)
+            .size()
+            .unstack(fill_value=0)
+        )
         st.area_chart(gender_age)
     else:
         age_counts = df["AgeGroup"].value_counts().sort_index()
@@ -194,7 +221,14 @@ if col_dob:
 
 if col_shirt:
     st.subheader("Tallas de camiseta")
-    shirt_counts = df[col_shirt].astype(str).str.upper().str.strip().replace({"NAN": "Sin dato", "": "Sin dato"}).value_counts()
+    shirt_counts = (
+        df[col_shirt]
+        .astype(str)
+        .str.upper()
+        .str.strip()
+        .replace({"NAN": "Sin dato", "": "Sin dato"})
+        .value_counts()
+    )
     st.bar_chart(shirt_counts)
 
 ###############################################################################
@@ -209,7 +243,14 @@ if col_avail:
         .fillna("Sin dato")
         .astype(str)
         .str.strip()
-        .replace({"undefinido": "Sin dato", "undefined": "Sin dato", "nan": "Sin dato", "": "Sin dato"})
+        .replace(
+            {
+                "undefinido": "Sin dato",
+                "undefined": "Sin dato",
+                "nan": "Sin dato",
+                "": "Sin dato",
+            }
+        )
     )
 
     avail_df = clean_avail.value_counts().reset_index()
