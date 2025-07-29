@@ -226,14 +226,21 @@ if col_insurance:
 ###############################################################################
 # Correos duplicados (sanity check)
 ###############################################################################
-
 email_col = find_col(["correo", "electrónico"]) or find_col(["email"])
 if email_col:
-    dupes = df[df[email_col].duplicated(keep=False)]
+    # Normalize y quita NaN/espacios
+    emails = df[email_col].fillna("").astype(str).str.strip()
+    # Mascara de no-vacíos
+    non_blank = emails != ""
+    # Mascara de duplicados entre los no-vacíos
+    dupe_mask = emails.duplicated(keep=False) & non_blank
+    dupes = df[dupe_mask]
+
     if not dupes.empty:
-        st.subheader("Correos duplicados")
-        st.write(f"Se encontraron {len(dupes)} registros duplicados.")
+        st.subheader("Correos duplicados (válidos)")
+        st.write(f"Se encontraron {len(dupes)} registros duplicados con correo válido.")
         st.dataframe(dupes[[email_col]].drop_duplicates())
+
 
 ###############################################################################
 # Footer
