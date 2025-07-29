@@ -21,7 +21,7 @@ except ModuleNotFoundError:
 
 st.set_page_config(
     page_title="Dashboard Voluntarios – JCC 2026",
-    page_icon="🏟️",
+    page_icon="logo.png",
     layout="wide",
 )
 
