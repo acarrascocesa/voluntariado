@@ -90,6 +90,27 @@ mapping = {
     "Republica Dominicana": "República Dominicana",
     # añade más correcciones si es necesario
 }
+
+# ————————————————————————————————————————————————
+# Unificar género en nacionalidad (Dominicana → Dominicano, Mexicana → Mexicano, etc.)
+# ————————————————————————————————————————————————
+if col_nat:
+    # Lista de valores únicos tras normalizar y mapear tildes
+    nat_vals = df[col_nat].unique()
+    gender_map = {}
+    for val in nat_vals:
+        # solo cadenas no vacías
+        if not val or not isinstance(val, str):
+            continue
+        # busca ´Terminadas en "a"´ que tengan contraparte en "o"
+        if val.endswith("a"):
+            masc = val[:-1] + "o"
+            if masc in nat_vals:
+                gender_map[val] = masc
+
+    # Aplica el reemplazo
+    df[col_nat] = df[col_nat].replace(gender_map)
+
 if col_country:
     df[col_country] = df[col_country].replace(mapping)
 if col_nat:
