@@ -31,7 +31,7 @@ st.title("🏟️ Voluntarios Juegos Centroamericanos y del Caribe 2026")
 # Cargar datos (WPForms)
 ###############################################################################
 
-FILE = "wpforms-45824-Formulario-de-Voluntarios-2025-07-31-20-57-35.csv"
+FILE = "wpforms-45824-Formulario-de-Voluntarios-2025-08-01-11-23-46.csv"
 
 
 @st.cache_data(show_spinner="Cargando datos…")
